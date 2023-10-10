@@ -24,12 +24,12 @@ public abstract class Beast extends Unit {
 
     public String printBeastInfo() {
         return this.getName()
-                + "("
+                + " ("
                 + this.getRace().getText()
                 + ")"
                 + " (Vida:"
                 + this.getHealth()
-                + " Armadura:"
+                + " | Armadura:"
                 + this.getArmor()
                 + ")";
     }

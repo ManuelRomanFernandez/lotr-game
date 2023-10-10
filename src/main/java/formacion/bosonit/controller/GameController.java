@@ -6,326 +6,398 @@ import formacion.bosonit.model.beast.Goblin;
 import formacion.bosonit.model.beast.Orc;
 import formacion.bosonit.model.hero.*;
 import formacion.bosonit.utils.Utils;
-import formacion.bosonit.view.GameViewImpl;
+import formacion.bosonit.view.GameView;
+import lombok.Getter;
+import lombok.Setter;
 
+import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.awt.event.*;
 import java.util.*;
 
-public class GameController {
-    private final GameViewImpl gameView;
+@Getter
+@Setter
+public class GameController implements KeyListener, MouseListener {
+    private List<Hero> heroTeam = new ArrayList<>();
+    private List<Beast> beastTeam = new ArrayList<>();
+    private String heroName = "";
+    private HeroRace heroRace = HeroRace.Humano;
+    private int heroHealth = 120;
+    private int heroArmor = 35;
+    private String beastName = "";
+    private BeastRace beastRace = BeastRace.Orco;
+    private int beastHealth = 120;
+    private int beastArmor = 35;
+
     private final Utils utils;
+    private final GameView gameView;
 
-    public GameController(GameViewImpl gameView, Utils utils) {
-        this.gameView = gameView;
+    public GameController(Utils utils, GameView gameView) {
         this.utils = utils;
+
+        this.gameView = gameView;
+
+        this.gameView.getHeroRaceSelectionDrop().setModel(new DefaultComboBoxModel<>(HeroRace.values()));
+        this.gameView.getBeastRaceSelectionDrop().setModel(new DefaultComboBoxModel<>(BeastRace.values()));
+
+        this.gameView.getHeroNameSelectionInput().addKeyListener(this);
+        this.gameView.getHeroRaceSelectionDrop().addItemListener(heroRaceListener);
+        this.gameView.getHeroHealthSelectionSpinner().addChangeListener(heroHealthListener);
+        this.gameView.getHeroArmorSelectionSpinner().addChangeListener(heroArmorListener);
+        this.gameView.getHeroAddButton().addMouseListener(this);
+
+        this.gameView.getBeastNameSelectionInput().addKeyListener(this);
+        this.gameView.getBeastRaceSelectionDrop().addItemListener(beastRaceListener);
+        this.gameView.getBeastHealthSelectionSpinner().addChangeListener(beastHealthListener);
+        this.gameView.getBeastArmorSelectionSpinner().addChangeListener(beastArmorListener);
+        this.gameView.getBeastAddButton().addMouseListener(this);
+        this.gameView.getHeroUpButton().addMouseListener(this);
+        this.gameView.getHeroDownButton().addMouseListener(this);
+        this.gameView.getHeroRemoveButton().addMouseListener(this);
+
+        this.gameView.getBeastUpButton().addMouseListener(this);
+        this.gameView.getBeastDownButton().addMouseListener(this);
+        this.gameView.getBeastRemoveBButton().addMouseListener(this);
+
+        this.gameView.getStartFightButton().addMouseListener(this);
     }
 
-    public void init() {
-        gameView.displayWelcome();
-        utils.gameDelay(1000);
+    ItemListener heroRaceListener = e -> setHeroRace((HeroRace) e.getItem());
 
-        gameView.displayHeroBanner();
-        utils.gameDelay(1000);
+    ChangeListener heroHealthListener = new ChangeListener() {
+        @Override
+        public void stateChanged(ChangeEvent e) {
+            setHeroHealth(Integer.parseInt(gameView.getHeroHealthSelectionSpinner().getValue().toString()));
+        }
+    };
 
-        List<Hero> heroTeam = heroTeamSelection();
-        utils.gameDelay(1000);
+    ChangeListener heroArmorListener = new ChangeListener() {
+        @Override
+        public void stateChanged(ChangeEvent e) {
+            setHeroArmor(Integer.parseInt(gameView.getHeroArmorSelectionSpinner().getValue().toString()));
+        }
+    };
 
-        gameView.displayBeastBanner();
-        utils.gameDelay(1000);
+    ItemListener beastRaceListener = e -> setBeastRace((BeastRace) e.getItem());
 
-        List<Beast> beastTeam = beastTeamSelection();
-        utils.gameDelay(1000);
+    ChangeListener beastHealthListener = new ChangeListener() {
+        @Override
+        public void stateChanged(ChangeEvent e) {
+            setBeastHealth(Integer.parseInt(gameView.getBeastHealthSelectionSpinner().getValue().toString()));
+        }
+    };
 
-        gameView.displayTeams(heroTeam, beastTeam);
-        utils.gameDelay(1500);
+    ChangeListener beastArmorListener = new ChangeListener() {
+        @Override
+        public void stateChanged(ChangeEvent e) {
+            setBeastArmor(Integer.parseInt(gameView.getBeastArmorSelectionSpinner().getValue().toString()));
+        }
+    };
 
-        gameView.displayGameStart();
-        utils.gameDelay(1500);
+    @Override
+    public void keyTyped(KeyEvent e) {
 
-        gameBattle(heroTeam, beastTeam);
     }
 
-    private List<Hero> heroTeamSelection () {
-        List<Hero> heroTeam = new ArrayList<>();
+    @Override
+    public void keyPressed(KeyEvent e) {
+    }
 
-        boolean activeLoop = true;
-        while (activeLoop) {
-            Scanner scanner = new Scanner(System.in);
+    @Override
+    public void keyReleased(KeyEvent e) {
+        if (e.getSource().equals(gameView.getHeroNameSelectionInput())) {
+            this.heroName = gameView.getHeroNameSelectionInput().getText();
+        }
 
-            gameView.displayHeroRaceSelection();
+        if (e.getSource().equals(gameView.getBeastNameSelectionInput())) {
+            this.beastName = gameView.getBeastNameSelectionInput().getText();
+        }
+    }
 
-            Hero unit = heroUnitSelection(scanner);
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
 
-            heroTeam.add(unit);
+    @Override
+    public void mousePressed(MouseEvent e) {
+    }
 
-            gameView.displayCurrentHeroTeam(heroTeam);
-            String loopOption = scanner.nextLine();
+    @Override
+    public void mouseReleased(MouseEvent e) {
+        if (e.getSource().equals(gameView.getHeroAddButton())) {
+            if (!Objects.equals(this.heroName, "")) {
+                Hero unit = null;
 
-            if (!Objects.equals(loopOption, "1")){
-                activeLoop = false;
+                switch (this.heroRace) {
+                    case Humano -> {
+                        unit = new Human();
+                        unit.setRace(HeroRace.Humano);
+                    }
+                    case Elfo -> {
+                        unit = new Elf();
+                        unit.setRace(HeroRace.Elfo);
+                    }
+                    case Hobbit -> {
+                        unit = new Hobbit();
+                        unit.setRace(HeroRace.Hobbit);
+                    }
+                }
+
+                unit.setName(this.heroName);
+                unit.setHealth(this.heroHealth);
+                unit.setArmor(heroArmor);
+                unit.setAlive(true);
+
+                this.heroTeam.add(unit);
+
+                this.updateHeroTeam();
+
+                gameView.getHeroNameSelectionInput().setText("");
+                this.heroName = "";
+                gameView.getHeroRaceSelectionDrop().setSelectedItem(HeroRace.Humano);
+                this.heroRace = HeroRace.Humano;
+                gameView.getHeroHealthSelectionSpinner().setValue(120);
+                this.heroHealth = 120;
+                gameView.getHeroArmorSelectionSpinner().setValue(35);
+                this.heroArmor = 35;
+            } else {
+                gameView.showEmptyNameAlert();
             }
         }
 
-        return heroTeam;
-    }
+        if (e.getSource().equals(gameView.getBeastAddButton())) {
+            if (!Objects.equals(this.beastName, "")){
+                Beast unit = null;
 
-    private Hero heroUnitSelection (Scanner scanner) {
-        Hero unit = null;
-        int unitNumber = 0;
-        boolean unitNumberBool = true;
+                switch (this.beastRace) {
+                    case Orco -> {
+                        unit = new Orc();
+                        unit.setRace(BeastRace.Orco);
+                    }
+                    case Trasgo -> {
+                        unit = new Goblin();
+                        unit.setRace(BeastRace.Trasgo);
+                    }
+                }
 
-        while (unitNumberBool) {
+                unit.setName(this.beastName);
+                unit.setHealth(this.beastHealth);
+                unit.setArmor(this.beastArmor);
+                unit.setAlive(true);
 
-            try {
-                unitNumber = scanner.nextInt();
-                scanner.nextLine();
-            } catch (InputMismatchException e) {
-                gameView.displayErrorNumber();
-                scanner.nextLine();
-                gameView.displaySpace();
-                gameView.displayHeroRaceSelection();
-                continue;
-            }
+                this.beastTeam.add(unit);
 
-            switch (unitNumber) {
-                case 1 -> {
-                    unit = new Human();
-                    unit.setRace(HeroRace.Human);
-                    unitNumberBool = false;
-                }
-                case 2 -> {
-                    unit = new Elf();
-                    unit.setRace(HeroRace.Elf);
-                    unitNumberBool = false;
-                }
-                case 3 -> {
-                    unit = new Hobbit();
-                    unit.setRace(HeroRace.Hobbit);
-                    unitNumberBool = false;
-                }
-                default -> {
-                    gameView.displayErrorNumber();
-                    gameView.displaySpace();
-                    gameView.displayHeroRaceSelection();
-                }
+                this.updateBeastTeam();
+
+                gameView.getBeastNameSelectionInput().setText("");
+                this.beastName = "";
+                gameView.getBeastRaceSelectionDrop().setSelectedItem(BeastRace.Orco);
+                this.beastRace = BeastRace.Orco;
+                gameView.getBeastHealthSelectionSpinner().setValue(120);
+                this.beastHealth = 120;
+                gameView.getBeastArmorSelectionSpinner().setValue(35);
+                this.beastArmor = 35;
+            } else {
+                gameView.showEmptyNameAlert();
             }
         }
 
-        gameView.displayUnitNameSelection(HeroRace.values()[unitNumber - 1].getText());
-        String unitName = scanner.nextLine();
+        if (!gameView.getHeroList().isSelectionEmpty()) {
+            if (e.getSource().equals(gameView.getHeroUpButton())) {
+                try {
+                    int index = gameView.getHeroList().getSelectedIndex();
+                    Collections.swap(heroTeam, index, (index - 1));
+                    this.updateHeroTeam();
+                } catch (IndexOutOfBoundsException exception) {
+                    gameView.showIndexOutOfBoundsExceptionAlert();
+                }
+            }
 
-        gameView.displayUnitHealthSelection();
-        int unitHealth = scanner.nextInt();
-        scanner.nextLine();
+            if (e.getSource().equals(gameView.getHeroDownButton())) {
+                try {
+                    int index = gameView.getHeroList().getSelectedIndex();
+                    Collections.swap(heroTeam, index, (index + 1));
+                    this.updateHeroTeam();
+                } catch (IndexOutOfBoundsException exception) {
+                    gameView.showIndexOutOfBoundsExceptionAlert();
+                }
+            }
 
-        gameView.displayUnitArmorSelection();
-        int unitArmor = scanner.nextInt();
-        scanner.nextLine();
-
-        unit.setName(unitName);
-        unit.setHealth(unitHealth);
-        unit.setArmor(unitArmor);
-        unit.setAlive(true);
-
-        return unit;
-    }
-
-    private List<Beast> beastTeamSelection() {
-        List<Beast> beastTeam = new ArrayList<>();
-
-        boolean activeLoop = true;
-        while (activeLoop) {
-            Scanner scanner = new Scanner(System.in);
-
-            gameView.displayBeastRaceSelection();
-
-            Beast unit = beastUnitSelection(scanner);
-
-            beastTeam.add(unit);
-
-            gameView.displayCurrentBeastTeam(beastTeam);
-            String loopOption = scanner.nextLine();
-
-            if (!Objects.equals(loopOption, "1")){
-                activeLoop = false;
+            if (e.getSource().equals(gameView.getHeroRemoveButton())) {
+                int index = gameView.getHeroList().getSelectedIndex();
+                heroTeam.remove(index);
+                this.updateHeroTeam();
             }
         }
 
-        return beastTeam;
-    }
-
-    private Beast beastUnitSelection (Scanner scanner) {
-        Beast unit = null;
-        int unitNumber = 0;
-        boolean unitNumberBool = true;
-
-        while (unitNumberBool) {
-            try {
-                unitNumber = scanner.nextInt();
-                scanner.nextLine();
-            } catch (InputMismatchException e) {
-                gameView.displayErrorNumber();
-                scanner.nextLine();
-                gameView.displaySpace();
-                gameView.displayBeastRaceSelection();
-                continue;
+        if (!gameView.getBeastList().isSelectionEmpty()) {
+            if (e.getSource().equals(gameView.getBeastUpButton())) {
+                try {
+                    int index = gameView.getBeastList().getSelectedIndex();
+                    Collections.swap(beastTeam, index, (index - 1));
+                    this.updateBeastTeam();
+                } catch (IndexOutOfBoundsException exception) {
+                    gameView.showIndexOutOfBoundsExceptionAlert();
+                }
             }
 
-            switch (unitNumber) {
-                case 1 -> {
-                    unit = new Orc();
-                    unit.setRace(BeastRace.Orc);
-                    unitNumberBool = false;
+            if (e.getSource().equals(gameView.getBeastDownButton())) {
+                try {
+                    int index = gameView.getBeastList().getSelectedIndex();
+                    Collections.swap(beastTeam, index, (index + 1));
+                    this.updateBeastTeam();
+                } catch (IndexOutOfBoundsException exception) {
+                    gameView.showIndexOutOfBoundsExceptionAlert();
                 }
-                case 2 -> {
-                    unit = new Goblin();
-                    unit.setRace(BeastRace.Goblin);
-                    unitNumberBool = false;
-                }
-                default -> {
-                    gameView.displayErrorNumber();
-                    gameView.displaySpace();
-                    gameView.displayBeastRaceSelection();
-                }
+            }
+
+            if (e.getSource().equals(gameView.getBeastRemoveBButton())) {
+                int index = gameView.getBeastList().getSelectedIndex();
+                beastTeam.remove(index);
+                this.updateBeastTeam();
             }
         }
 
-        gameView.displayUnitNameSelection(BeastRace.values()[unitNumber - 1].getText());
-        String unitName = scanner.nextLine();
+        if (e.getSource().equals(gameView.getStartFightButton())
+                & this.heroTeam.size() > 0
+                & this.beastTeam.size() > 0) {
+            gameView.getFightLog().setText("");
+            SwingWorker<Void, Void> gameWorker = new SwingWorker<Void, Void>() {
+                @Override
+                protected Void doInBackground() throws Exception {
+                    gameBattle();
+                    return null;
+                }
+            };
 
-        gameView.displayUnitHealthSelection();
-        int unitHealth = scanner.nextInt();
-        scanner.nextLine();
+            gameWorker.execute();
+        }
 
-        gameView.displayUnitArmorSelection();
-        int unitArmor = scanner.nextInt();
-        scanner.nextLine();
-
-        unit.setName(unitName);
-        unit.setHealth(unitHealth);
-        unit.setArmor(unitArmor);
-        unit.setAlive(true);
-
-        return unit;
     }
 
-    private void gameBattle(List<Hero> heroTeam, List<Beast> beastTeam) {
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+    }
+
+    private void gameBattle() {
         Random random = new Random();
-        Collections.shuffle(heroTeam);
-        Collections.shuffle(beastTeam);
 
         boolean battleBool = true;
         int turn = 1;
 
-        int fightsNum = Math.min(heroTeam.size(), beastTeam.size());
-
-        activateInitialFighters(heroTeam, beastTeam, fightsNum);
+        gameView.displayGameStart();
 
         while (battleBool) {
+            int fightsNum = Math.min(heroTeam.size(), beastTeam.size());
+
             gameView.displayTurn(turn);
-            gameView.displaySpace();
+            gameView.updateAndScroll();
+            this.updateBattle();
+
             utils.gameDelay(1000);
 
-            fightsNum = Math.min(heroTeam.size(), beastTeam.size());
-
             for (int i = 0; i < fightsNum; i++) {
-
-                if (!heroTeam.get(i).isAlive()) {
-                    swapHeroUnits(heroTeam, i, countAliveBeasts(beastTeam));
+                if ((heroTeam.size() - 1) < i | (beastTeam.size() - 1) < i) {
+                    break;
                 }
+
                 Hero hero = heroTeam.get(i);
-
-                if (!beastTeam.get(i).isAlive()) {
-                    swapBeastUnits(beastTeam, i, countAliveHeroes(heroTeam));
-                }
                 Beast beast = beastTeam.get(i);
 
-                if (hero.isAlive() & beast.isAlive()) {
-                    gameView.displayFightWarning(hero, beast);
-                    utils.gameDelay(1000);
+                gameView.displayFightWarning(hero, beast);
+                gameView.updateAndScroll();
+                utils.gameDelay(1000);
 
-                    if ((random.nextInt(99)+1) % 2 == 0) {
-                        int[] heroAttack = hero.attack(beast);
-                        gameView.displayFightFirstAttack(hero, beast, heroAttack);
+                if ((random.nextInt(99) + 1) % 2 == 0) {
+                    int[] heroAttack = hero.attack(beast);
+                    gameView.displayFightFirstAttack(hero, beast, heroAttack);
+                    gameView.updateAndScroll();
+                    utils.gameDelay(500);
+
+                    beast.getAttacked(heroAttack[1]);
+
+                    if (beast.getHealth() <= 0) {
+                        gameView.displayBeastDeath(beast);
+                        gameView.updateAndScroll();
                         utils.gameDelay(500);
 
-                        beast.getAttacked(heroAttack[1]);
+                        beastTeam.remove(beast);
 
-                        if (!beast.isAlive()) {
-                            gameView.displayBeastDeath(beast);
-                            gameView.displaySpace();
-                            utils.gameDelay(500);
-
-                            hero.setFighting(false);
-                            swapBeastUnits(beastTeam, i, countAliveHeroes(heroTeam));
-
-                            continue;
-                        }
-
-                        int[] beastAttack = beast.attack(hero);
-                        gameView.displayFightSecondAttack(beast, hero, beastAttack);
-                        utils.gameDelay(500);
-
-                        hero.getAttacked(beastAttack[1]);
-
-                        if (!hero.isAlive()) {
-                            gameView.displayHeroDeath(hero);
-                            gameView.displaySpace();
-                            utils.gameDelay(500);
-
-                            beast.setFighting(false);
-                            swapHeroUnits(heroTeam, i, countAliveBeasts(beastTeam));
-
-                            continue;
-                        }
-                    } else {
-                        int[] beastAttack = beast.attack(hero);
-                        gameView.displayFightFirstAttack(beast, hero, beastAttack);
-                        utils.gameDelay(500);
-
-                        hero.getAttacked(beastAttack[1]);
-
-                        if (!hero.isAlive()) {
-                            gameView.displayHeroDeath(hero);
-                            gameView.displaySpace();
-                            utils.gameDelay(500);
-
-                            beast.setFighting(false);
-                            swapHeroUnits(heroTeam, i, countAliveBeasts(beastTeam));
-
-                            continue;
-                        }
-
-                        int[] heroAttack = hero.attack(beast);
-                        gameView.displayFightSecondAttack(hero, beast, heroAttack);
-                        utils.gameDelay(500);
-
-                        beast.getAttacked(heroAttack[1]);
-
-                        if (!beast.isAlive()) {
-                            gameView.displayBeastDeath(beast);
-                            gameView.displaySpace();
-                            utils.gameDelay(500);
-
-                            hero.setFighting(false);
-                            swapBeastUnits(beastTeam, i, countAliveHeroes(heroTeam));
-
-                            continue;
-                        }
+                        continue;
                     }
 
-                    gameView.displaySpace();
+                    this.updateBattle();
 
+                    int[] beastAttack = beast.attack(hero);
+                    gameView.displayFightSecondAttack(beast, hero, beastAttack);
+                    gameView.updateAndScroll();
+                    utils.gameDelay(500);
+
+                    hero.getAttacked(beastAttack[1]);
+
+                    if (hero.getHealth() <= 0) {
+                        gameView.displayHeroDeath(hero);
+                        gameView.updateAndScroll();
+                        utils.gameDelay(500);
+
+                        heroTeam.remove(hero);
+                    }
+
+                    this.updateBattle();
+                } else {
+                    int[] beastAttack = beast.attack(hero);
+                    gameView.displayFightFirstAttack(beast, hero, beastAttack);
+                    gameView.updateAndScroll();
+                    utils.gameDelay(500);
+
+                    hero.getAttacked(beastAttack[1]);
+
+                    if (hero.getHealth() <= 0) {
+                        gameView.displayHeroDeath(hero);
+                        gameView.updateAndScroll();
+                        utils.gameDelay(500);
+
+                        heroTeam.remove(hero);
+
+                        continue;
+                    }
+
+                    this.updateBattle();
+
+                    int[] heroAttack = hero.attack(beast);
+                    gameView.displayFightSecondAttack(hero, beast, heroAttack);
+                    gameView.updateAndScroll();
+                    utils.gameDelay(500);
+
+                    beast.getAttacked(heroAttack[1]);
+
+                    if (beast.getHealth() <= 0) {
+                        gameView.displayBeastDeath(beast);
+                        gameView.updateAndScroll();
+                        utils.gameDelay(500);
+
+                        beastTeam.remove(beast);
+                    }
+
+                    this.updateBattle();
                 }
 
             }
 
-            if (countAliveHeroes(heroTeam) == 0){
-                gameView.displaySpace();
+            if (heroTeam.size() == 0) {
+                this.updateBattle();
                 gameView.displayBeastWin();
+                gameView.updateAndScroll();
                 battleBool = false;
-            } else if (countAliveBeasts(beastTeam) == 0) {
-                gameView.displaySpace();
+            } else if (beastTeam.size() == 0) {
+                this.updateBattle();
                 gameView.displayHeroWin();
+                gameView.updateAndScroll();
                 battleBool = false;
             }
 
@@ -333,47 +405,28 @@ public class GameController {
         }
     }
 
-    private void activateInitialFighters(List<Hero> heroTeam, List<Beast> beastTeam, int size) {
-        for (int i = 0; i < size; i++){
-            heroTeam.get(i).setFighting(true);
-            beastTeam.get(i).setFighting(true);
+    private void updateHeroTeam() {
+        DefaultListModel<String> dlmHero = new DefaultListModel<>();
+
+        for (Hero hero : this.heroTeam) {
+            dlmHero.addElement(hero.printHeroInfo());
         }
+
+        gameView.getHeroList().setModel(dlmHero);
     }
 
-    private void swapHeroUnits(List<Hero> heroTeam, int index, int minSize) {
-        if (countAliveHeroes(heroTeam) >= minSize){
-            heroTeam.stream()
-                    .skip(minSize)
-                    .filter(hero -> hero.isAlive() && !hero.isFighting())
-                    .findFirst()
-                    .ifPresent(hero -> {
-                        Collections.swap(heroTeam, index, heroTeam.indexOf(hero));
-                        heroTeam.get(index).setFighting(true);
-                        hero.setFighting(false);
-                    });
+    private void updateBeastTeam() {
+        DefaultListModel<String> dlmHero = new DefaultListModel<>();
+
+        for (Beast beast : this.beastTeam) {
+            dlmHero.addElement(beast.printBeastInfo());
         }
+
+        gameView.getBeastList().setModel(dlmHero);
     }
 
-    private void swapBeastUnits(List<Beast> beastTeam, int index, int minSize) {
-        if (countAliveBeasts(beastTeam) >= minSize) {
-            beastTeam.stream()
-                    .skip(minSize)
-                    .filter(beast -> beast.isAlive() && !beast.isFighting())
-                    .findFirst()
-                    .ifPresent(beast -> {
-                        Collections.swap(beastTeam, index, beastTeam.indexOf(beast));
-                        beastTeam.get(index).setFighting(true);
-                        beast.setFighting(false);
-                    });
-        }
+    private void updateBattle() {
+        this.updateHeroTeam();
+        this.updateBeastTeam();
     }
-
-    private int countAliveHeroes(List<Hero> heroTeam) {
-        return (int) heroTeam.stream().filter(Hero::isAlive).count();
-    }
-
-    private int countAliveBeasts(List<Beast> beastTeam) {
-        return (int) beastTeam.stream().filter(Beast::isAlive).count();
-    }
-
 }
