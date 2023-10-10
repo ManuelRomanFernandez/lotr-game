@@ -29,12 +29,12 @@ public abstract class Hero extends Unit {
 
     public String printHeroInfo() {
         return this.getName()
-                + "("
+                + " ("
                 + this.getRace().getText()
                 + ")"
                 + " (Vida:"
                 + this.getHealth()
-                + " Armadura:"
+                + " | Armadura:"
                 + this.getArmor()
                 + ")";
     }

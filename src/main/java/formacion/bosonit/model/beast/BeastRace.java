@@ -1,8 +1,8 @@
 package formacion.bosonit.model.beast;
 
 public enum BeastRace {
-    Orc("Orco"),
-    Goblin("Trasgo");
+    Orco("Orco"),
+    Trasgo("Trasgo");
 
     private final String text;
 

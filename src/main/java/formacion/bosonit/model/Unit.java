@@ -12,12 +12,7 @@ public abstract class Unit {
 
     public abstract int[] attack(Unit enemy);
     public void getAttacked(int damage){
-        if ((this.health - damage) <= 0){
-            setHealth(0);
-            setAlive(false);
-        } else {
-            setHealth(this.health - damage);
-        }
+        setHealth(this.health - damage);
     }
 
     public String printUnitStats() {
